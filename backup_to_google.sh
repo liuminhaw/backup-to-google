@@ -109,5 +109,7 @@ for _list_data in $(ls); do
     gdrive --config ${_gdrive_config} --parent ${_gdrive_parent} ${_output_filename}
     cd -
     echo "Upload done"
+
+    # TODOs: Moving file and removing file
 done
 
