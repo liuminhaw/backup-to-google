@@ -1,0 +1,15 @@
+{
+  "general-config": {
+    "source": "PATH FOR QUEUED UPLOAD"
+  },
+  "archive-encrypt-config": {
+    "destination-dir": "DIRECTORY PATH TO STORED ENCRYPTED FILES",
+    "encrypt-method": "gzip/bzip2/xz",
+    "passphrase-file": "PATH OF PASSPHRASE FILE",
+    "passphrase": "encryption passphrase"
+  },
+  "gdrive-config": {
+    "config": "PATH TO GDRIVE CONFIG FILE",
+    "parent": "PARENT FOLDER IDENTIFIER"
+  }  
+}

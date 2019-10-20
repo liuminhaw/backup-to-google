@@ -1,0 +1,8 @@
+{
+  "FILM IDENTIFIER HERE": {
+    "filename": "ARCHIVED FILENAME HERE",
+    "output-filename": "ENCRYPTED FILENAME",
+    "description": "FILM DESCRIPTION HERE",
+    "uploaded": "boolean true/false"
+  }
+}
