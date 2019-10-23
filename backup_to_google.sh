@@ -14,7 +14,6 @@
 # Exit Code:
 #   2 - Required settings file not found
 #   3 - Missing command
-#   4 - info data not set
 #
 # Version: 
 
@@ -56,9 +55,10 @@ fi
 
 # Variable declaration
 _source_dir=$(jq -r '."general-config"."source"' ./config.json)
+_complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
 
 _gdrive_config=$(jq -r '."gdrive-config"."config"' ./config.json)
-_gdrive_parent=$(jq -r '."gdrive-config"."parent"' config.json)
+_gdrive_parent=$(jq -r '."gdrive-config"."parent"' ./config.json)
 
 # Create config file for archive_encrypt dependency script
 _ae_destination_dir=$(jq -r '."archive-encrypt-config"."destination-dir"' ./config.json)
@@ -70,7 +70,7 @@ _ae_passphrase=$(jq -r '."archive-encrypt-config"."passphrase"' ./config.json)
 cat <<EOF > archive_encrypt.conf
 _DESTINATION_DIR=${_ae_destination_dir}
 _ENCRYPT_METHOD=${_ae_encrypt_method}
-_PASSPHRASE_FILE=.passphrase_heyhey=${_ae_passphrase_file}
+_PASSPHRASE_FILE=${_ae_passphrase_file}
 EOF
 
 cat <<EOF > ${_ae_passphrase_file}
@@ -78,21 +78,23 @@ ${_ae_passphrase}
 EOF
 
 # Archive, Encrypt, and Upload
-cd ${_source_dir}
-for _list_data in $(ls); do
-    echo "${_list_data} in progress..."
-    if [[ -f "${_list_data}" ]]; then
-        chmod 644 ${_list_data}
-    elif [[ -d "${_list_data}" ]]; then
-        chmod -R 644 ${_list_data}/*
-        chmod 755 ${_list_data}
+# cd ${_source_dir}
+for _list_data in $(ls ${_source_dir}); do
+    _source_data=${_source_dir}/${_list_data}
+    echo "${_source_data} in progress..."
+    if [[ -f "${_source_data}" ]]; then
+        chmod 644 ${_source_data}
+    elif [[ -d "${_source_data}" ]]; then
+        chmod -R 644 ${_source_data}/*
+        chmod 755 ${_source_data}
     fi
 
     _id=$(echo "${_list_data}" | cut -d _ -f1)
-    _info_block=$(jq -r '."${_id}"' ${_INFO_FILE})
+    _info_block=$(jq -r --arg _ID "${_id}" '.[$_ID]' ${_INFO_FILE})
+    echo "Current path: $(pwd)"
     if [[ ${_info_block} == "null" ]]; then
         echo "info file for ${_list_data} is not set"
-        exit 4
+        continue
     else
         _filename=$(echo "${_info_block}" | jq -r '."filename"')
         _description=$(echo "${_info_block}" | jq -r '."description"')
@@ -100,16 +102,39 @@ for _list_data in $(ls); do
         echo "Description: ${_description}"
     fi
 
-    cd -
+    echo ""
     ./lib/${_ARCHIVE_ENCRYPT} ${_filename} ${_source_dir}/${_list_data}
+    echo ""
 
     echo "Uploading..."
     cd ${_ae_destination_dir}
     _output_filename=$(echo "${_info_block}" | jq -r '."output-filename"')
-    gdrive --config ${_gdrive_config} --parent ${_gdrive_parent} ${_output_filename}
+    gdrive --config ${_gdrive_config} upload --parent ${_gdrive_parent} ${_output_filename}
     cd -
-    echo "Upload done"
+    echo "Upload done."
 
-    # TODOs: Moving file and removing file
+    # Moving and removing file
+    echo ""
+    echo "${_source_data} moving to ${_complete_dir}..."
+    mv ${_source_data} ${_complete_dir}
+    echo "Moved successed."
+
+    echo ""
+    echo "Removing encrypted file ${_output_filename} in ${_ae_destination_dir}..."
+    cd ${_ae_destination_dir}
+    rm ${_output_filename}
+    cd -
+    echo "Remove successed."
+
+    # Change info uploaded status
+    cp ./info.json ./.info.json.bkp
+    jq --arg _ID "${_id}" '.[$_ID]."uploaded" = "true"' ./info.json > ./.info.json.tmp
+    mv ./.info.json.tmp ./info.json
+
+    # Clean up
+    rm  archive_encrypt.conf ${_ae_passphrase_file}
+
+    echo ""
+    echo "${_list_data} progress done."
 done
 
