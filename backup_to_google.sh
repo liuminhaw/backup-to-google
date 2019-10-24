@@ -128,13 +128,12 @@ for _list_data in $(ls ${_source_dir}); do
 
     # Change info uploaded status
     cp ./info.json ./.info.json.bkp
-    jq --arg _ID "${_id}" '.[$_ID]."uploaded" = "true"' ./info.json > ./.info.json.tmp
+    jq --arg _ID "${_id}" '.[$_ID]."uploaded" = true' ./info.json > ./.info.json.tmp
     mv ./.info.json.tmp ./info.json
-
-    # Clean up
-    rm  archive_encrypt.conf ${_ae_passphrase_file}
 
     echo ""
     echo "${_list_data} progress done."
 done
 
+# Clean up
+rm  archive_encrypt.conf ${_ae_passphrase_file}
