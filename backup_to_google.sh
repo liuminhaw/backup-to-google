@@ -57,8 +57,15 @@ fi
 _source_dir=$(jq -r '."general-config"."source"' ./config.json)
 _complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
 
+_sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
+_sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
+_sendgrid_recipient=$(jq -r '."sendgrid-config"."recipient"' ./config.json)
+_sendgrid_name=$(jq -r '."sendgrid-config"."name"' ./config.json)
+_sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
+
 _gdrive_config=$(jq -r '."gdrive-config"."config"' ./config.json)
 _gdrive_parent=$(jq -r '."gdrive-config"."parent"' ./config.json)
+_gdrive_info_id=$(jq -r '."gdrive-config"."info-id"' ./config.json)
 
 # Create config file for archive_encrypt dependency script
 _ae_destination_dir=$(jq -r '."archive-encrypt-config"."destination-dir"' ./config.json)
@@ -79,7 +86,10 @@ EOF
 
 # Archive, Encrypt, and Upload
 # cd ${_source_dir}
+_iter=0
 for _list_data in $(ls ${_source_dir}); do
+    _summary[${_iter}]=${_list_data}
+
     _source_data=${_source_dir}/${_list_data}
     echo "${_source_data} in progress..."
     if [[ -f "${_source_data}" ]]; then
@@ -133,7 +143,51 @@ for _list_data in $(ls ${_source_dir}); do
 
     echo ""
     echo "${_list_data} progress done."
+
+    # Send notification mail
+    echo ""
+    echo "Sending notification..."
+    _mail_content="<p>File: ${_output_filename} upload success</p><p>Origin filename: ${_list_data}</p>"
+
+    maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
+        "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
+
+    curl --request POST \
+    --url https://api.sendgrid.com/v3/mail/send \
+    --header 'Authorization: Bearer '$SENDGRID_API_KEY \
+    --header 'Content-Type: application/json' \
+    --data "'$maildata'"
+    echo "Notification sent."
+
+    _iter=$((${_iter} + 1))
 done
+
+# info upload
+echo ""
+echo "Uploading info file..."
+_output_filename="info.json"
+gdrive --config ${_gdrive_config} update ${_gdrive_info_id} ${_output_filename}
+echo "info file upload success"
+
+# Send summary mail
+echo ""
+echo "Sending summary notification..."
+# _mail_content="<p>File: ${_output_filename} upload success</p><p>Origin filename: ${_list_data}</p>"
+_mail_content="<h2>Backup to Google summary: HeyHey</h2>"
+for _list_data in ${_summary[@]}; do
+    _mail_content="${_mail_content}<p>${_list_data}</p>"
+done
+_mail_content="${_mail_content}<hr><p>info.json</p>"
+
+maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
+    "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
+
+curl --request POST \
+--url https://api.sendgrid.com/v3/mail/send \
+--header 'Authorization: Bearer '$SENDGRID_API_KEY \
+--header 'Content-Type: application/json' \
+--data "'$maildata'"
+echo "Summary notification sent."
 
 # Clean up
 rm  archive_encrypt.conf ${_ae_passphrase_file}

@@ -44,7 +44,7 @@ function Installation() {
     if [[ ! -f ${DESTDIR}/config.json ]]; then
         cp heyhey-config-template.json ${DESTDIR}/config.json
         checkCode 11 "Copy heyhey-config-template.json failed."  &> /dev/null
-        chmod 644 ${DESTDIR}/config.json
+        chmod 600 ${DESTDIR}/config.json
         checkCode 13 "Change config.json permission failed."
     fi
 

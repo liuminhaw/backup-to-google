@@ -11,6 +11,14 @@
   },
   "gdrive-config": {
     "config": "PATH TO GDRIVE CONFIG FILE",
-    "parent": "PARENT FOLDER IDENTIFIER"
+    "parent": "PARENT FOLDER IDENTIFIER",
+    "info-id": "INFO FILE ID"
+  },
+  "sendgrid-config": {
+    "key": "KEY FOR SENDING NOTIFICATION MAIL",
+    "sender": "SENDER EMAIL ADDRESS",
+    "recipient": "RECIPIENT EMAIL ADDRESS",
+    "name": "SENDER NAME",
+    "subject": "EMAIL SUBJECT"
   }  
 }
