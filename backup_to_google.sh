@@ -154,7 +154,7 @@ for _list_data in $(ls ${_source_dir}); do
 
     curl --request POST \
     --url https://api.sendgrid.com/v3/mail/send \
-    --header 'Authorization: Bearer '$SENDGRID_API_KEY \
+    --header 'Authorization: Bearer '$_sendgrid_key \
     --header 'Content-Type: application/json' \
     --data "'$maildata'"
     echo "Notification sent."
@@ -184,7 +184,7 @@ maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}]
 
 curl --request POST \
 --url https://api.sendgrid.com/v3/mail/send \
---header 'Authorization: Bearer '$SENDGRID_API_KEY \
+--header 'Authorization: Bearer '$_sendgrid_key \
 --header 'Content-Type: application/json' \
 --data "'$maildata'"
 echo "Summary notification sent."
