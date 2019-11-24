@@ -1,7 +1,8 @@
 {
   "general-config": {
     "source": "PATH FOR QUEUED UPLOAD",
-    "complete": "PATH FOR COMPLETED DATA"
+    "complete": "PATH FOR COMPLETED DATA",
+    "backup": "PATH FOR BACKUP DATA AFTER COMPLETION"
   },
   "archive-encrypt-config": {
     "destination-dir": "DIRECTORY PATH TO STORED ENCRYPTED FILES",

@@ -56,6 +56,7 @@ fi
 # Variable declaration
 _source_dir=$(jq -r '."general-config"."source"' ./config.json)
 _complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
+_backup_dir=$(jq -r '."general-config"."backup"' ./config.json)
 
 _sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
 _sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
@@ -123,12 +124,19 @@ for _list_data in $(ls ${_source_dir}); do
     cd -
     echo "Upload done."
 
-    # Moving and removing file
+    # Backup to backup directory and complete directory 
     echo ""
-    echo "${_source_data} moving to ${_complete_dir}..."
+    echo "Backup ${_source_data} >>> ${_backup_dir}..."
+    cp -r ${_source_data} ${_backup_dir}
+    echo "Backup succeed"
+
+    # Moving to complete directory 
+    echo ""
+    echo "Move ${_source_data} >>> ${_complete_dir}..."
     mv ${_source_data} ${_complete_dir}
     echo "Moved successed."
 
+    # Remove encrypted file
     echo ""
     echo "Removing encrypted file ${_output_filename} in ${_ae_destination_dir}..."
     cd ${_ae_destination_dir}
