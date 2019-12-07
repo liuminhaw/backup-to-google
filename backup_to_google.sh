@@ -14,21 +14,57 @@
 # Exit Code:
 #   2 - Required settings file not found
 #   3 - Missing command
+#   4 - Configuration settings directory not found
 #
-# Version: 
+# Version: 0.1.1
 
-#--------------------
+# ----------------------------------------------------------------------------
 # Function definition
-# 
-# Usage: 
-# Return:
-#---------------------
+#
+# Usage: show_help
+# ----------------------------------------------------------------------------
+show_help() {
+cat << EOF
+Usage: ${0##*/} [--help] [--no-backup]
+
+    --help                  Display this help message and exit
+    --no-backup             Disable backup source data after uploaded
+    --version               Show version information
+EOF
+}
 
 
 # Environment variables
+_VERSION="Version 0.1.1"
+_SCRIPT=$(basename ${0})
 _CONFIG_FILE=./config.json
 _INFO_FILE=./info.json
 _ARCHIVE_ENCRYPT=archive_encrypt_v0.1.1.sh
+
+# --------------------
+# Command line options
+# --------------------
+while :; do
+    case ${1} in 
+        --version)
+            echo "${_VERSION}"
+            exit
+            ;;
+        --help)
+            show_help
+            exit
+            ;;
+        --no-backup)
+            _no_backup="true"
+            ;;
+        -?*)
+            echo "WARN: Unknown option (ignored): ${1}" 1>&2
+            ;;
+        *) # Default case: no more options
+            break
+    esac
+    shift
+done
 
 # --------------------
 # Requirements testing
@@ -53,6 +89,13 @@ if [[ "${?}" -ne 0 ]]; then
     exit 3
 fi
 
+# gdrive command
+which gdrive 1> /dev/null
+if [[ "${?}" -ne 0 ]]; then
+    echo "No such command: gdrive"
+    exit 3
+fi
+
 # Variable declaration
 _source_dir=$(jq -r '."general-config"."source"' ./config.json)
 _complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
@@ -73,6 +116,32 @@ _ae_destination_dir=$(jq -r '."archive-encrypt-config"."destination-dir"' ./conf
 _ae_encrypt_method=$(jq -r '."archive-encrypt-config"."encrypt-method"' ./config.json)
 _ae_passphrase_file=$(jq -r '."archive-encrypt-config"."passphrase-file"' ./config.json)
 _ae_passphrase=$(jq -r '."archive-encrypt-config"."passphrase"' ./config.json)
+
+# Test configuration directories / files
+if [[ ! -d "${_source_dir}" ]]; then
+    echo "Info: ${_source_dir} directory not exist"
+    exit 4
+fi
+
+if [[ ! -d "${_complete_dir}" ]]; then
+    echo "Info: ${_complete_dir} directory not exist"
+    exit 4
+fi
+
+if [[ ! -d "${_backup_dir}" ]]; then
+    echo "Info: ${_backup_dir} directory not exist"
+    exit 4
+fi
+
+if [[ ! -d "${_ae_destination_dir}" ]]; then
+    echo "Info: ${_ae_destination_dir} directory not exist"
+    exit 4
+fi
+
+if [[ ! -e "${_gdrive_config}" ]]; then
+    echo "Info: ${_gdrive_config} file not exist"
+    exit 2
+fi
 
 
 cat <<EOF > archive_encrypt.conf
@@ -124,17 +193,25 @@ for _list_data in $(ls ${_source_dir}); do
     cd -
     echo "Upload done."
 
-    # Backup to backup directory and complete directory 
-    echo ""
-    echo "Backup ${_source_data} >>> ${_backup_dir}..."
-    cp -r ${_source_data} ${_backup_dir}
-    echo "Backup succeed"
+    # Backup to backup directory 
+    if [[ "${_no_backup}" -ne "true" ]]; then
+        echo ""
+        echo "Backup ${_source_data} to ${_backup_dir}..."
+        cp -r ${_source_data} ${_backup_dir}
+        echo "Backup succeed"
+    fi
 
-    # Moving to complete directory 
+    # Moving to complete directory
     echo ""
-    echo "Move ${_source_data} >>> ${_complete_dir}..."
-    mv ${_source_data} ${_complete_dir}
-    echo "Moved successed."
+    echo "Copy ${_source_data} to ${_complete_dir}..."
+    cp -r ${_source_data} ${_complete_dir}
+    if [[ ${?} -eq 0 ]]; then
+        echo "Remove ${_source_data}..."
+        rm -rf ${_source_data}
+        echo "Moving ${_source_data} to ${_complete_dir} successed"
+    else
+        echo "Failed to move ${_source_data} to ${_complete_dir}"
+    fi
 
     # Remove encrypted file
     echo ""
