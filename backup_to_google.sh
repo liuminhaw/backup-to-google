@@ -194,7 +194,7 @@ for _list_data in $(ls ${_source_dir}); do
     echo "Upload done."
 
     # Backup to backup directory 
-    if [[ "${_no_backup}" -ne "true" ]]; then
+    if [[ "${_no_backup}" != "true" ]]; then
         echo ""
         echo "Backup ${_source_data} to ${_backup_dir}..."
         cp -r ${_source_data} ${_backup_dir}
