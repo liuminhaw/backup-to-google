@@ -28,7 +28,15 @@ config file will be created in destination directory
 - Give information in the config file according to each configuration description
 
 
-## Version 0.1.0
+## Version 0.1.1
+- Options:
+    - `--help`
+    - `--no-backup`
+    - `--version`
+- Add backup directory config, files will be backup to the directory after uploading. Use `--no-backup` option to restrict the feature
+- Take `uploaded` config into effect
+
+#### Version 0.1.0
 First release version
 - Upload archived and encrypted file/directory to google drive
 - Email notification after each process
@@ -36,7 +44,14 @@ First release version
 
 ## Usage
 Run command after finish setting each configuration file
-
-```bash
-./backup_to_google.sh
 ```
+Usage: ./backup_to_google.sh [--help] [--no-backup]
+      --help                  Display this help message and exit
+      --no-backup             Disable backup source data after uploaded
+      --version               Show version information
+```
+
+### Exit codes
+`2` - Required settings file not found
+`3` - Missing command
+`4` - Configuration settings directory not found
