@@ -212,8 +212,17 @@ for _list_data in $(ls ${_source_dir}); do
     else
         _filename=$(echo "${_info_block}" | jq -r '."filename"')
         _description=$(echo "${_info_block}" | jq -r '."description"')
+        _uploaded=$(echo "${_info_block}" | jq -r '."uploaded"')
         echo "Filename: ${_filename}"
         echo "Description: ${_description}"
+        echo "Uploaded: ${_uploaded}"
+    fi
+
+    # Cancel upload process if uploaded is true
+    if [[ "${_uploaded}" != false ]]; then
+        echo ""
+        echo "Uploaded not equal to 'fales' detection"
+        continue
     fi
 
     echo ""
