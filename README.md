@@ -52,6 +52,8 @@ Usage: ./backup_to_google.sh [--help] [--no-backup]
 ```
 
 ### Exit codes
-`2` - Required settings file not found
-`3` - Missing command
-`4` - Configuration settings directory not found
+```
+2 - Required settings file not found  
+3 - Missing command  
+4 - Configuration settings directory not found
+```  
