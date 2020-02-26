@@ -33,6 +33,40 @@ Usage: ${0##*/} [--help] [--no-backup]
 EOF
 }
 
+# ----------------------------------------------------------------------------
+# Function definition
+#
+# Usage: send_mail mail_content
+# content can be written in html format
+# ----------------------------------------------------------------------------
+sendgrid_mail() {
+    _sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
+    _sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
+    _sendgrid_recipient=$(jq -r '."sendgrid-config"."recipient"' ./config.json)
+    _sendgrid_name=$(jq -r '."sendgrid-config"."name"' ./config.json)
+    _sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
+
+    _mail_content=${1}
+
+    #_recipient=${1}
+    #_sender=${2}
+    #_name=${3}
+    #_subject=${4}
+    #_content=${5}
+
+    _mail_data='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],
+        "from": {"email": "'${_sendgrid_sender}'", 
+        "name": "'${_sendgrid_name}'"},
+        "subject": "'${_sendgrid_subject}'",
+        "content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
+
+    curl --request POST \
+    --url https://api.sendgrid.com/v3/mail/send \
+    --header 'Authorization: Bearer '$_sendgrid_key \
+    --header 'Content-Type: application/json' \
+    --data "'$_mail_data'"
+}
+
 
 # Environment variables
 _VERSION="Version 0.1.1"
@@ -101,11 +135,11 @@ _source_dir=$(jq -r '."general-config"."source"' ./config.json)
 _complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
 _backup_dir=$(jq -r '."general-config"."backup"' ./config.json)
 
-_sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
-_sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
-_sendgrid_recipient=$(jq -r '."sendgrid-config"."recipient"' ./config.json)
-_sendgrid_name=$(jq -r '."sendgrid-config"."name"' ./config.json)
-_sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
+# _sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
+# _sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
+# _sendgrid_recipient=$(jq -r '."sendgrid-config"."recipient"' ./config.json)
+# _sendgrid_name=$(jq -r '."sendgrid-config"."name"' ./config.json)
+# _sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
 
 _gdrive_config=$(jq -r '."gdrive-config"."config"' ./config.json)
 _gdrive_parent=$(jq -r '."gdrive-config"."parent"' ./config.json)
@@ -234,18 +268,39 @@ for _list_data in $(ls ${_source_dir}); do
     echo "Sending notification..."
     _mail_content="<p>File: ${_output_filename} upload success</p><p>Origin filename: ${_list_data}</p>"
 
-    maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
-        "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
+    # mail_data='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],
+    #     "from": {"email": "'${_sendgrid_sender}'", 
+    #     "name": "'${_sendgrid_name}'"},
+    #     "subject": "'${_sendgrid_subject}'",
+    #     "content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
 
-    curl --request POST \
-    --url https://api.sendgrid.com/v3/mail/send \
-    --header 'Authorization: Bearer '$_sendgrid_key \
-    --header 'Content-Type: application/json' \
-    --data "'$maildata'"
+    # curl --request POST \
+    # --url https://api.sendgrid.com/v3/mail/send \
+    # --header 'Authorization: Bearer '$_sendgrid_key \
+    # --header 'Content-Type: application/json' \
+    # --data "'$maildata'"
+
+    sendgrid_mail "${_mail_content}"
     echo "Notification sent."
 
     _iter=$((${_iter} + 1))
 done
+
+# Clean up
+rm  archive_encrypt.conf ${_ae_passphrase_file}
+
+# Stop process if noting is uploaded
+if [[ "${_iter}" == 0 ]]; then
+    echo ""
+    echo "No file has been uploaded."
+
+    # Send notification mail
+    echo ""
+    echo "Sending notification..."
+    _mail_content="<p>No file has been uploaded</p>"
+    sendgrid_mail "${_mail_content}"
+    exit 0
+fi
 
 # info upload
 echo ""
@@ -264,15 +319,13 @@ for _list_data in ${_summary[@]}; do
 done
 _mail_content="${_mail_content}<hr><p>info.json</p>"
 
-maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
-    "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
+# maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
+#     "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
 
-curl --request POST \
---url https://api.sendgrid.com/v3/mail/send \
---header 'Authorization: Bearer '$_sendgrid_key \
---header 'Content-Type: application/json' \
---data "'$maildata'"
+# curl --request POST \
+# --url https://api.sendgrid.com/v3/mail/send \
+# --header 'Authorization: Bearer '$_sendgrid_key \
+# --header 'Content-Type: application/json' \
+# --data "'$maildata'"
+sendgrid_mail "${_mail_content}"
 echo "Summary notification sent."
-
-# Clean up
-rm  archive_encrypt.conf ${_ae_passphrase_file}
