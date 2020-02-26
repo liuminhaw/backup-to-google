@@ -11,11 +11,6 @@
 #
 # Notes:
 #
-# Exit Code:
-#   2 - Required settings file not found
-#   3 - Missing command
-#   4 - Configuration settings directory not found
-#
 # Version: 0.1.1
 
 # ----------------------------------------------------------------------------
@@ -47,12 +42,6 @@ sendgrid_mail() {
     _sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
 
     _mail_content=${1}
-
-    #_recipient=${1}
-    #_sender=${2}
-    #_name=${3}
-    #_subject=${4}
-    #_content=${5}
 
     _mail_data='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],
         "from": {"email": "'${_sendgrid_sender}'", 
@@ -134,12 +123,6 @@ fi
 _source_dir=$(jq -r '."general-config"."source"' ./config.json)
 _complete_dir=$(jq -r '."general-config"."completed"' ./config.json)
 _backup_dir=$(jq -r '."general-config"."backup"' ./config.json)
-
-# _sendgrid_key=$(jq -r '."sendgrid-config"."key"' ./config.json)
-# _sendgrid_sender=$(jq -r '."sendgrid-config"."sender"' ./config.json)
-# _sendgrid_recipient=$(jq -r '."sendgrid-config"."recipient"' ./config.json)
-# _sendgrid_name=$(jq -r '."sendgrid-config"."name"' ./config.json)
-# _sendgrid_subject=$(jq -r '."sendgrid-config"."subject"' ./config.json)
 
 _gdrive_config=$(jq -r '."gdrive-config"."config"' ./config.json)
 _gdrive_parent=$(jq -r '."gdrive-config"."parent"' ./config.json)
@@ -277,18 +260,6 @@ for _list_data in $(ls ${_source_dir}); do
     echo "Sending notification..."
     _mail_content="<p>File: ${_output_filename} upload success</p><p>Origin filename: ${_list_data}</p>"
 
-    # mail_data='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],
-    #     "from": {"email": "'${_sendgrid_sender}'", 
-    #     "name": "'${_sendgrid_name}'"},
-    #     "subject": "'${_sendgrid_subject}'",
-    #     "content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
-
-    # curl --request POST \
-    # --url https://api.sendgrid.com/v3/mail/send \
-    # --header 'Authorization: Bearer '$_sendgrid_key \
-    # --header 'Content-Type: application/json' \
-    # --data "'$maildata'"
-
     sendgrid_mail "${_mail_content}"
     echo "Notification sent."
 
@@ -328,13 +299,5 @@ for _list_data in ${_summary[@]}; do
 done
 _mail_content="${_mail_content}<hr><p>info.json</p>"
 
-# maildata='{"personalizations": [{"to": [{"email": "'${_sendgrid_recipient}'"}]}],"from": {"email": "'${_sendgrid_sender}'", 
-#     "name": "'${_sendgrid_name}'"},"subject": "'${_sendgrid_subject}'","content": [{"type": "text/html", "value": "'${_mail_content}'"}]}'
-
-# curl --request POST \
-# --url https://api.sendgrid.com/v3/mail/send \
-# --header 'Authorization: Bearer '$_sendgrid_key \
-# --header 'Content-Type: application/json' \
-# --data "'$maildata'"
 sendgrid_mail "${_mail_content}"
 echo "Summary notification sent."
